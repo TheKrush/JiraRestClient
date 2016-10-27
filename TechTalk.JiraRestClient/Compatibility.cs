@@ -270,6 +270,11 @@ namespace TechTalk.JiraRestClient
         {
             return client.GetServerInfo();
         }
+
+        public IEnumerable<ProjectVersion> GetVersions(string projectKey)
+        {
+            return client.GetVersions(projectKey);
+        }
     }
 
     public class Issue : Issue<IssueFields>
