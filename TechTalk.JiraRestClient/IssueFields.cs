@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Runtime.Remoting.Messaging;
+using RestSharp.Deserializers;
 
 namespace TechTalk.JiraRestClient
 {
@@ -46,7 +47,11 @@ namespace TechTalk.JiraRestClient
 
         public Resolution resolution { get; set; }
         public DateTime? resolutiondate { get; set; }
-
+        
         public Priority priority { get; set; }
+
+        //TODO-BS: Fertig umbauen .. vielleicht auch neues attribut das ein Attribut überhaupt bei insert / update berücksichtigt wird!
+        [DeserializeAs(Name = "customfield_10502")]        
+        public string CommentVersion { get; set; }
     }
 }

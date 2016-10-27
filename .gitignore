@@ -5,3 +5,4 @@ packages/
 *.suo
 *.log
 *.nupkg
+TestConsole/

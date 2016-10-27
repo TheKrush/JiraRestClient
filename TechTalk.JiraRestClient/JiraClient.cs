@@ -182,6 +182,42 @@ namespace TechTalk.JiraRestClient
                 issue.fields.comments = GetComments(issue).ToList();
                 issue.fields.watchers = GetWatchers(issue).ToList();
                 Issue.ExpandLinks(issue);
+
+                ////Customfield name as attribute on a property
+                //var propertyInfos = typeof(TIssueFields).GetProperties();
+                //var propertiesFromAttribute = propertyInfos
+                //    .Select(p => new { Property = p, FieldAttribute = p.GetAttribute<FieldAttribute>() })
+                //    .Where(a => a.FieldAttribute != null)
+                //    .Select(p => new NamedProperty(p.Property, p.FieldAttribute.FieldName));
+
+                //var customFields = propertyInfos
+                //    .Where(p => p.Name.StartsWith("customfield_"))
+                //    .Select(p => new NamedProperty(p, p.Name));
+
+                //var propertyList = customFields.Concat(propertiesFromAttribute).ToList();
+                //if (!propertyList.Any()) return issue;
+
+                //foreach (var namedProperty in propertyList)
+                //{
+
+                //    //namedProperty.FieldName
+
+                //    var jsonResponse = deserializer.Deserialize<Dictionary<string, string>>(response);
+                    
+                    
+                //    //var jsonFields = deserializer.Deserialize<Dictionary<string, string>>(jsonResponse["fields"]); 
+                //    Console.WriteLine(jsonResponse);
+
+                //    namedProperty.Property.SetValue(issue.fields, Convert.ChangeType("123", namedProperty.Property.PropertyType), null);
+
+
+                //    //var value = namedProperty.Property.GetValue(issue, null);
+                //    //if (value != null)
+                //    //{
+                //    //    //issue..Add(namedProperty.FieldName, value);   
+                //    //}
+                //}
+                
                 return issue;
             }
             catch (Exception ex)
@@ -196,7 +232,7 @@ namespace TechTalk.JiraRestClient
             return CreateIssue(projectKey, issueType, new TIssueFields { summary = summary });
         }
 
-        public Issue<TIssueFields> CreateIssue(String projectKey, String issueType, TIssueFields issueFields)
+        public Issue<TIssueFields> CreateIssue(String projectKey, String issueType, TIssueFields issue)
         {
             try
             {
@@ -207,24 +243,26 @@ namespace TechTalk.JiraRestClient
                 issueData.Add("project", new { key = projectKey });
                 issueData.Add("issuetype", new { name = issueType });
 
-                if (issueFields.assignee != null)
-                    issueData.Add("assignee", issueFields.assignee);
-                if (issueFields.reporter != null)
-                    issueData.Add("reporter", issueFields.reporter);
-                if (issueFields.summary != null)
-                    issueData.Add("summary", issueFields.summary);
-                if (issueFields.description != null)
-                    issueData.Add("description", issueFields.description);
-                if (issueFields.labels != null && issueFields.labels.Count > 0)
-                    issueData.Add("labels", issueFields.labels);
-                if (issueFields.timetracking != null)
-                    issueData.Add("timetracking", new { originalEstimate = issueFields.timetracking.originalEstimate });
+                if (issue.assignee != null)
+                    issueData.Add("assignee", issue.assignee);
+                if (issue.reporter != null)
+                    issueData.Add("reporter", issue.reporter);
+                if (issue.summary != null)
+                    issueData.Add("summary", issue.summary);
+                if (issue.description != null)
+                    issueData.Add("description", issue.description);
+                if (issue.labels != null && issue.labels.Count > 0)
+                    issueData.Add("labels", issue.labels);
+                if (issue.timetracking != null)
+                    issueData.Add("timetracking", new { originalEstimate = issue.timetracking.originalEstimate });
 
+                //************************************************************
+                //Customfield name as attribute on a property
                 var propertyInfos = typeof(TIssueFields).GetProperties();
                 var propertiesFromAttribute = propertyInfos
-                    .Select(p => new { Property = p, FieldAttribute = p.GetAttribute<FieldAttribute>() })
+                    .Select(p => new { Property = p, FieldAttribute = p.GetAttribute<DeserializeAsAttribute>() })
                     .Where(a => a.FieldAttribute != null)
-                    .Select(p => new NamedProperty(p.Property, p.FieldAttribute.FieldName));
+                    .Select(p => new NamedProperty(p.Property, p.FieldAttribute.Name));
 
                 var customFields = propertyInfos
                     .Where(p => p.Name.StartsWith("customfield_"))
@@ -234,9 +272,20 @@ namespace TechTalk.JiraRestClient
 
                 foreach (var namedProperty in propertyList)
                 {
-                    var value = namedProperty.Property.GetValue(issueFields, null);
+                    var value = namedProperty.Property.GetValue(issue, null);
                     if (value != null) issueData.Add(namedProperty.FieldName, value);
                 }
+                //************************************************************
+
+                //************************************************************
+                //Customfield name included into property name
+                //var propertyList = typeof(TIssueFields).GetProperties().Where(p => p.Name.StartsWith("customfield_"));
+                //foreach (var property in propertyList)
+                //{
+                //    var value = property.GetValue(issue, null);
+                //    if (value != null) issueData.Add(property.Name, value);
+                //}
+                //************************************************************
 
                 request.AddBody(new { fields = issueData });
 
@@ -253,37 +302,61 @@ namespace TechTalk.JiraRestClient
             }
         }
 
-        public Issue<TIssueFields> UpdateIssue(Issue<TIssueFields> issue)
+        public Issue<TIssueFields> UpdateIssue(Issue<TIssueFields> issueFields)
         {
             try
             {
-                var path = String.Format("issue/{0}", issue.JiraIdentifier);
+                var path = String.Format("issue/{0}", issueFields.JiraIdentifier);
                 var request = CreateRequest(Method.PUT, path);
                 request.AddHeader("ContentType", "application/json");
 
-                var updateData = new Dictionary<string, object>();
-                if (issue.fields.summary != null)
-                    updateData.Add("summary", new[] { new { set = issue.fields.summary } });
-                if (issue.fields.description != null)
-                    updateData.Add("description", new[] { new { set = issue.fields.description } });
-                if (issue.fields.labels != null)
-                    updateData.Add("labels", new[] { new { set = issue.fields.labels } });
-                if (issue.fields.timetracking != null)
-                    updateData.Add("timetracking", new[] { new { set = new { originalEstimate = issue.fields.timetracking.originalEstimate } } });
+                var issueData = new Dictionary<string, object>();
+                if (issueFields.fields.summary != null)
+                    issueData.Add("summary", new[] { new { set = issueFields.fields.summary } });
+                if (issueFields.fields.description != null)
+                    issueData.Add("description", new[] { new { set = issueFields.fields.description } });
+                if (issueFields.fields.labels != null)
+                    issueData.Add("labels", new[] { new { set = issueFields.fields.labels } });
+                if (issueFields.fields.timetracking != null)
+                    issueData.Add("timetracking", new[] { new { set = new { originalEstimate = issueFields.fields.timetracking.originalEstimate } } });
 
-                var propertyList = typeof(TIssueFields).GetProperties().Where(p => p.Name.StartsWith("customfield_"));
-                foreach (var property in propertyList)
+                //************************************************************
+                //Customfield name as attribute on a property
+                var propertyInfos = typeof(TIssueFields).GetProperties();
+                var propertiesFromAttribute = propertyInfos
+                    .Select(p => new { Property = p, FieldAttribute = p.GetAttribute<DeserializeAsAttribute>() })
+                    .Where(a => a.FieldAttribute != null)
+                    .Select(p => new NamedProperty(p.Property, p.FieldAttribute.Name));
+
+                var customFields = propertyInfos
+                    .Where(p => p.Name.StartsWith("customfield_"))
+                    .Select(p => new NamedProperty(p, p.Name));
+
+                var propertyList = customFields.Concat(propertiesFromAttribute);
+
+                foreach (var namedProperty in propertyList)
                 {
-                    var value = property.GetValue(issue.fields, null);
-                    if (value != null) updateData.Add(property.Name, new[] { new { set = value } });
+                    var value = namedProperty.Property.GetValue(issueFields.fields, null);
+                    if (value != null) issueData.Add(namedProperty.FieldName, value);
                 }
+                //************************************************************
 
-                request.AddBody(new { update = updateData });
+                //************************************************************
+                //Customfield name included into property name
+                //var propertyList = typeof(TIssueFields).GetProperties().Where(p => p.Name.StartsWith("customfield_"));
+                //foreach (var property in propertyList)
+                //{
+                //    var value = property.GetValue(issue, null);
+                //    if (value != null) issueData.Add(property.Name, value);
+                //}
+                //************************************************************
+
+                request.AddBody(new { update = issueData });
 
                 var response = ExecuteRequest(request);
                 AssertStatus(response, HttpStatusCode.NoContent);
 
-                return LoadIssue(issue);
+                return LoadIssue(issueFields);
             }
             catch (Exception ex)
             {
@@ -357,31 +430,31 @@ namespace TechTalk.JiraRestClient
             }
         }
 
-		public List<JiraUser> FindUsers(string search)
-		{
-			try
-			{
-				var path = String.Format("user/search?username={0}", search);
-				var request = CreateRequest(Method.GET, path);
-				var response = ExecuteRequest(request);
-				AssertStatus(response, HttpStatusCode.OK);
+        public List<JiraUser> FindUsers(string search)
+        {
+            try
+            {
+                var path = String.Format("user/search?username={0}", search);
+                var request = CreateRequest(Method.GET, path);
+                var response = ExecuteRequest(request);
+                AssertStatus(response, HttpStatusCode.OK);
 
-				var result = deserializer.Deserialize<List<JiraUser>>(response);
-				return result;
-			}
-			catch (Exception ex)
-			{
-				Trace.TraceError("FindUsers(issue) error: {0}", ex);
-				throw new JiraClientException( String.Format("Could find user {0}. {1}",search,ex));
-			}
-		}
-		
-		public JiraUser FindUser(string search)
-		{
-			return FindUsers(search).FirstOrDefault();
-		}
+                var result = deserializer.Deserialize<List<JiraUser>>(response);
+                return result;
+            }
+            catch (Exception ex)
+            {
+                Trace.TraceError("FindUsers(issue) error: {0}", ex);
+                throw new JiraClientException(String.Format("Could find user {0}. {1}", search, ex));
+            }
+        }
 
-		public IEnumerable<JiraUser> GetWatchers(IssueRef issue)
+        public JiraUser FindUser(string search)
+        {
+            return FindUsers(search).FirstOrDefault();
+        }
+
+        public IEnumerable<JiraUser> GetWatchers(IssueRef issue)
         {
             try
             {
@@ -400,7 +473,7 @@ namespace TechTalk.JiraRestClient
             }
         }
 
-        public List<T> GetProjects<T>() where T: JiraProject
+        public List<T> GetProjects<T>() where T : JiraProject
         {
             try
             {
@@ -418,31 +491,31 @@ namespace TechTalk.JiraRestClient
                 throw new JiraClientException("Could not load projects", ex);
             }
 
-        } 
-        
-        public List<T> FindUsers<T>(string search) where T : JiraUser
-		{
-			try
-			{
-				var path = String.Format("user/search?username={0}", search);
-				var request = CreateRequest(Method.GET, path);
-				var response = ExecuteRequest(request);
-				AssertStatus(response, HttpStatusCode.OK);
+        }
 
-				var result = deserializer.Deserialize<List<T>>(response);
-				return result;
-			}
-			catch (Exception ex)
-			{
-				Trace.TraceError("FindUsers(issue) error: {0}", ex);
-				throw new JiraClientException(String.Format("Could find user {0}. {1}", search, ex));
-			}
-		}
+        public List<T> FindUsers<T>(string search) where T : JiraUser
+        {
+            try
+            {
+                var path = String.Format("user/search?username={0}", search);
+                var request = CreateRequest(Method.GET, path);
+                var response = ExecuteRequest(request);
+                AssertStatus(response, HttpStatusCode.OK);
+
+                var result = deserializer.Deserialize<List<T>>(response);
+                return result;
+            }
+            catch (Exception ex)
+            {
+                Trace.TraceError("FindUsers(issue) error: {0}", ex);
+                throw new JiraClientException(String.Format("Could find user {0}. {1}", search, ex));
+            }
+        }
 
         public T FindUser<T>(string search) where T : JiraUser
-		{
-			return FindUsers<T>(search).FirstOrDefault();
-		}
+        {
+            return FindUsers<T>(search).FirstOrDefault();
+        }
 
 
 
@@ -785,7 +858,7 @@ namespace TechTalk.JiraRestClient
             }
         }
 
-        public IEnumerable<T> GetIssueStatuses<T>() where T:Status
+        public IEnumerable<T> GetIssueStatuses<T>() where T : Status
         {
             try
             {
@@ -850,7 +923,7 @@ namespace TechTalk.JiraRestClient
         {
             try
             {
-                var path = String.Format("project/{0}/versions",Uri.EscapeUriString(projectKey));
+                var path = String.Format("project/{0}/versions", Uri.EscapeUriString(projectKey));
                 var request = CreateRequest(Method.GET, path);
 
                 var response = ExecuteRequest(request);
