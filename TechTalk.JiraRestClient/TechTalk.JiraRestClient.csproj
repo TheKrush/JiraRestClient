@@ -49,11 +49,13 @@
     <Compile Include="Utils\TimeUtils.cs" />
     <Compile Include="Worklog.cs" />
     <Compile Include="WorklogUpdated.cs" />
+    <Compile Include="FieldAttribute.cs" />
     <Compile Include="IssueType.cs" />
     <Compile Include="JiraProject.cs" />
     <Compile Include="Prioirty.cs" />
     <Compile Include="ProjectVersion.cs" />
     <Compile Include="Resolution.cs" />
+    <Compile Include="NamedProperty.cs" />
     <Compile Include="ServerInfo.cs" />
     <Compile Include="WatchersContainer.cs" />
     <Compile Include="IJiraClient.cs" />
