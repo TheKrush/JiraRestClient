@@ -45,10 +45,12 @@
     <Compile Include="Comment.cs" />
     <Compile Include="CommentsContainer.cs" />
     <Compile Include="Compatibility.cs" />
+    <Compile Include="IssuePriority.cs" />
     <Compile Include="Utils\TimeUtils.cs" />
     <Compile Include="Worklog.cs" />
     <Compile Include="WorklogUpdated.cs" />
     <Compile Include="IssueType.cs" />
+    <Compile Include="JiraProject.cs" />
     <Compile Include="Prioirty.cs" />
     <Compile Include="ProjectVersion.cs" />
     <Compile Include="Resolution.cs" />

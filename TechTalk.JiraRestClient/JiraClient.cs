@@ -302,7 +302,7 @@ namespace TechTalk.JiraRestClient
         {
             try
             {
-                var path = String.Format("issue/{0}/transitions?expand=transitions.fields", issue.id);
+                var path = String.Format("issue/{0}/transitions?expand=transitions.fields", issue.JiraIdentifier);
                 var request = CreateRequest(Method.GET, path);
 
                 var response = ExecuteRequest(request);
@@ -387,6 +387,51 @@ namespace TechTalk.JiraRestClient
                 throw new JiraClientException("Could not load watchers", ex);
             }
         }
+
+        public List<T> GetProjects<T>() where T: JiraProject
+        {
+            try
+            {
+                var path = "project";
+                var request = CreateRequest(Method.GET, path);
+
+                var response = ExecuteRequest(request);
+                AssertStatus(response, HttpStatusCode.OK);
+
+                return deserializer.Deserialize<List<T>>(response);
+            }
+            catch (Exception ex)
+            {
+                Trace.TraceError("GetProjects() error: {0}", ex);
+                throw new JiraClientException("Could not load projects", ex);
+            }
+
+        } 
+        
+        public List<T> FindUsers<T>(string search) where T : JiraUser
+		{
+			try
+			{
+				var path = String.Format("user/search?username={0}", search);
+				var request = CreateRequest(Method.GET, path);
+				var response = ExecuteRequest(request);
+				AssertStatus(response, HttpStatusCode.OK);
+
+				var result = deserializer.Deserialize<List<T>>(response);
+				return result;
+			}
+			catch (Exception ex)
+			{
+				Trace.TraceError("FindUsers(issue) error: {0}", ex);
+				throw new JiraClientException(String.Format("Could find user {0}. {1}", search, ex));
+			}
+		}
+
+        public T FindUser<T>(string search) where T : JiraUser
+		{
+			return FindUsers<T>(search).FirstOrDefault();
+		}
+
 
 
         public IEnumerable<Comment> GetComments(IssueRef issue)
@@ -707,7 +752,7 @@ namespace TechTalk.JiraRestClient
             }
         }
 
-        public IEnumerable<IssueType> GetIssueTypes()
+        public IEnumerable<T> GetIssueTypes<T>() where T : IssueType
         {
             try
             {
@@ -717,7 +762,7 @@ namespace TechTalk.JiraRestClient
                 var response = ExecuteRequest(request);
                 AssertStatus(response, HttpStatusCode.OK);
 
-                var data = deserializer.Deserialize<List<IssueType>>(response);
+                var data = deserializer.Deserialize<List<T>>(response);
                 return data;
 
             }
@@ -725,6 +770,48 @@ namespace TechTalk.JiraRestClient
             {
                 Trace.TraceError("GetIssueTypes() error: {0}", ex);
                 throw new JiraClientException("Could not load issue types", ex);
+            }
+        }
+
+        public IEnumerable<T> GetIssueStatuses<T>() where T:Status
+        {
+            try
+            {
+                var request = CreateRequest(Method.GET, "status");
+                request.AddHeader("ContentType", "application/json");
+
+                var response = ExecuteRequest(request);
+                AssertStatus(response, HttpStatusCode.OK);
+
+                var data = deserializer.Deserialize<List<T>>(response);
+                return data;
+
+            }
+            catch (Exception ex)
+            {
+                Trace.TraceError("GetIssueStatuses() error: {0}", ex);
+                throw new JiraClientException("Could not load issue statuses", ex);
+            }
+        }
+
+        public IEnumerable<T> GetIssuePriorities<T>() where T : IssuePriority
+        {
+            try
+            {
+                var request = CreateRequest(Method.GET, "priority");
+                request.AddHeader("ContentType", "application/json");
+
+                var response = ExecuteRequest(request);
+                AssertStatus(response, HttpStatusCode.OK);
+
+                var data = deserializer.Deserialize<List<T>>(response);
+                return data;
+
+            }
+            catch (Exception ex)
+            {
+                Trace.TraceError("GetIssuePriorities() error: {0}", ex);
+                throw new JiraClientException("Could not load issue priorities", ex);
             }
         }
 

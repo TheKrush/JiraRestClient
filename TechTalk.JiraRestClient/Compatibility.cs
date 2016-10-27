@@ -263,7 +263,7 @@ namespace TechTalk.JiraRestClient
 
         public IEnumerable<IssueType> GetIssueTypes()
         {
-            return client.GetIssueTypes();
+            return client.GetIssueTypes<IssueType>();
         }
 
         public ServerInfo GetServerInfo()

@@ -51,6 +51,12 @@ namespace TechTalk.JiraRestClient
         /// <summary>Returns all watchers for the given issue</summary>
         IEnumerable<JiraUser> GetWatchers(IssueRef issue);
 
+        List<T> GetProjects<T>() where T : JiraProject;
+
+        List<T> FindUsers<T>(string search) where T : JiraUser;
+        T FindUser<T>(string search) where T : JiraUser;
+
+
         /// <summary>Returns all comments for the given issue</summary>
         IEnumerable<Comment> GetComments(IssueRef issue);
         /// <summary>Adds a comment to the given issue</summary>
@@ -89,7 +95,13 @@ namespace TechTalk.JiraRestClient
         IEnumerable<Worklog> GetWorklogList(int[] ids);
 
         /// <summary>Returns all issue types</summary>
-        IEnumerable<IssueType> GetIssueTypes();
+        IEnumerable<T> GetIssueTypes<T>() where T : IssueType;
+
+        /// <summary>Returns all issue statuses</summary>
+        IEnumerable<T> GetIssueStatuses<T>() where T : Status;
+
+        /// <summary>Returns all issue priorities</summary>
+        IEnumerable<T> GetIssuePriorities<T>() where T : IssuePriority;
 
         /// <summary>Returns information about the JIRA server</summary>
         ServerInfo GetServerInfo();
