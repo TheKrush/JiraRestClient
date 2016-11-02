@@ -16,23 +16,28 @@ namespace TechTalk.JiraRestClient
 
     public class JiraClient<TIssueFields> : IJiraClient<TIssueFields> where TIssueFields : IssueFields, new()
     {
-        private readonly string username;
-        private readonly string password;
+        //TODO-BS: Naming usw. überarbeiten
+        private readonly string auth;
         private readonly JsonDeserializer deserializer;
         private readonly string baseApiUrl;
         public JiraClient(string baseUrl, string username, string password)
         {
-            this.username = username;
-            this.password = password;
+            baseApiUrl = new Uri(new Uri(baseUrl), "rest/api/2/").ToString();
+            auth = Convert.ToBase64String(Encoding.UTF8.GetBytes(String.Format("{0}:{1}", username, password)));
+            deserializer = new JsonDeserializer();
+        }
 
+        public JiraClient(string baseUrl, string authstring)
+        {
+            auth = authstring;
             baseApiUrl = new Uri(new Uri(baseUrl), "rest/api/2/").ToString();
             deserializer = new JsonDeserializer();
         }
 
         private RestRequest CreateRequest(Method method, String path)
         {
-            var request = new RestRequest { Method = method, Resource = path, RequestFormat = DataFormat.Json };
-            request.AddHeader("Authorization", "Basic " + Convert.ToBase64String(Encoding.UTF8.GetBytes(String.Format("{0}:{1}", username, password))));
+            var request = new RestRequest { Method = method, Resource = path, RequestFormat = DataFormat.Json, DateFormat = "yyyy-MM-ddTHH:mm:ss.fffzz00" };
+            request.AddHeader("Authorization", String.Format("Basic {0}", auth));
             return request;
         }
 
@@ -48,6 +53,26 @@ namespace TechTalk.JiraRestClient
                 throw new JiraClientException("Transport level error: " + response.ErrorMessage, response.ErrorException);
             if (response.StatusCode != status)
                 throw new JiraClientException("JIRA returned wrong status: " + response.StatusDescription, response.Content);
+        }
+
+        public JiraUser GetLoggedInUser()
+        {
+            try
+            {
+                var path = "myself";
+                var request = CreateRequest(Method.GET, path);
+
+                var response = ExecuteRequest(request);
+                AssertStatus(response, HttpStatusCode.OK);
+
+                var jiraUser = deserializer.Deserialize<JiraUser>(response);
+                return jiraUser;
+            }
+            catch (Exception ex)
+            {
+                Trace.TraceError("GetLoggedInUser() error: {0}", ex);
+                throw new JiraClientException("Could not load user", ex);
+            }
         }
 
 
@@ -86,6 +111,11 @@ namespace TechTalk.JiraRestClient
             return EnumerateIssuesByQuery(CreateCommonJql(projectKey, null), null, 0);
         }
 
+        public IEnumerable<Issue<TIssueFields>> GetIssuesByQuery(string jqlQuery)
+        {
+            return EnumerateIssuesInternal("", "", jqlQuery);
+        }
+        
         public IEnumerable<Issue<TIssueFields>> EnumerateIssues(String projectKey, String issueType)
         {
             return EnumerateIssuesByQuery(CreateCommonJql(projectKey, issueType), null, 0);
@@ -577,6 +607,96 @@ namespace TechTalk.JiraRestClient
             }
         }
 
+        public IEnumerable<Worklog> GetWorklogs(IssueRef issue)
+        {
+            try
+            {
+                var path = String.Format("issue/{0}/worklog", issue.id);
+                var request = CreateRequest(Method.GET, path);
+
+                var response = ExecuteRequest(request);
+                AssertStatus(response, HttpStatusCode.OK);
+
+                var data = deserializer.Deserialize<WorklogsContainer>(response);
+                return data.Worklogs ?? Enumerable.Empty<Worklog>();
+            }
+            catch (Exception ex)
+            {
+                Trace.TraceError("GetWorklogs(issue) error: {0}", ex);
+                throw new JiraClientException("Could not load worklogs", ex);
+            }
+        }
+
+        public Worklog CreateWorklog(IssueRef issue, int timespentSeconds, string comment, DateTime started)
+        {
+            try
+            {
+                var path = String.Format("issue/{0}/worklog", issue.id);
+                var request = CreateRequest(Method.POST, path);
+                request.AddHeader("ContentType", "application/json");
+
+                var insert = new Dictionary<string, object>();
+                insert.Add("started", started.ToString("yyyy-MM-ddTHH:mm:ss.fffzz00"));
+                insert.Add("comment", comment);
+                insert.Add("timeSpentSeconds", timespentSeconds);
+
+                request.AddBody(insert);
+
+                var response = ExecuteRequest(request);
+                AssertStatus(response, HttpStatusCode.Created);
+
+                return deserializer.Deserialize<Worklog>(response);
+            }
+            catch (Exception ex)
+            {
+                Trace.TraceError("CreateComment(issue, comment) error: {0}", ex);
+                throw new JiraClientException("Could not create worklog", ex);
+            }
+        }
+
+        public Worklog UpdateWorklog(IssueRef issue, Worklog worklog)
+        {
+            try
+            {
+                var path = string.Format("issue/{0}/worklog/{1}", issue.id, worklog.id);
+                var request = CreateRequest(Method.PUT, path);
+                request.AddHeader("ContentType", "application/json");
+
+                var updateData = new Dictionary<string, object>();
+                if (worklog.comment != null) updateData.Add("comment", worklog.comment);
+                if (worklog.started != DateTime.MinValue) updateData.Add("started", worklog.started.ToString("yyyy-MM-ddTHH:mm:ss.fffzz00"));
+                if (worklog.timeSpentSeconds != 0) updateData.Add("timeSpentSeconds", worklog.timeSpentSeconds);
+                request.AddBody(updateData);
+
+                var response = ExecuteRequest(request);
+                AssertStatus(response, HttpStatusCode.OK);
+
+                return deserializer.Deserialize<Worklog>(response);
+            }
+            catch (Exception ex)
+            {
+                Trace.TraceError("UpdateWorklog(issue, worklog) error: {0}", ex);
+                throw new JiraClientException("Could not update worklog for issue", ex);
+            }
+        }
+
+        public void DeleteWorklog(IssueRef issue, Worklog worklog)
+        {
+            try
+            {
+                var path = String.Format("issue/{0}/worklog/{1}", issue.id, worklog.id);
+                var request = CreateRequest(Method.DELETE, path);
+
+                var response = ExecuteRequest(request);
+                AssertStatus(response, HttpStatusCode.NoContent);
+            }
+            catch (Exception ex)
+            {
+                Trace.TraceError("DeleteWorklog(issue, worklog) error: {0}", ex);
+                throw new JiraClientException("Could not delete worklog", ex);
+            }
+        }
+
 
         public IEnumerable<Attachment> GetAttachments(IssueRef issue)
         {
@@ -897,6 +1017,29 @@ namespace TechTalk.JiraRestClient
             {
                 Trace.TraceError("GetIssuePriorities() error: {0}", ex);
                 throw new JiraClientException("Could not load issue priorities", ex);
+            }
+        }
+
+        //TODO-BS: PRüfen ob doppelt, dies wäre das "neue"
+        public JiraUser GetUser(string username)
+        {
+            try
+            {
+                var path = string.Format("user?username={0}", username);
+                var request = CreateRequest(Method.POST, path);
+                request.AddHeader("ContentType", "application/json");
+
+                var response = ExecuteRequest(request);
+                AssertStatus(response, HttpStatusCode.OK);
+
+                var data = deserializer.Deserialize<JiraUser>(response);
+                return data;
+
+            }
+            catch (Exception ex)
+            {
+                Trace.TraceError("GetUser({0}) error: {1}", username, ex);
+                throw new JiraClientException("Could not load user", ex);
             }
         }
 
