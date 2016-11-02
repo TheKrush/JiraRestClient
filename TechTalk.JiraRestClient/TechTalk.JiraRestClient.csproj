@@ -1,5 +1,5 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<Project ToolsVersion="12.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">x86</Platform>
@@ -10,7 +10,7 @@
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>TechTalk.JiraRestClient</RootNamespace>
     <AssemblyName>TechTalk.JiraRestClient</AssemblyName>
-    <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.6.1</TargetFrameworkVersion>
     <TargetFrameworkProfile>
     </TargetFrameworkProfile>
     <FileAlignment>512</FileAlignment>
@@ -24,11 +24,13 @@
     <PlatformTarget>AnyCPU</PlatformTarget>
     <OutputPath>bin\Debug\</OutputPath>
     <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <Prefer32Bit>false</Prefer32Bit>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|AnyCPU'">
     <PlatformTarget>AnyCPU</PlatformTarget>
     <OutputPath>bin\Release\</OutputPath>
     <DefineConstants>TRACE</DefineConstants>
+    <Prefer32Bit>false</Prefer32Bit>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="RestSharp">
@@ -41,42 +43,45 @@
     <Compile Include="..\JiraIssueCollection\JiraIssueCollection\Impl\QueryableIssueCollection.cs">
       <Link>QueryableIssueCollection.cs</Link>
     </Compile>
-    <Compile Include="Attachment.cs" />
-    <Compile Include="AvatarUrls.cs" />
-    <Compile Include="Project.cs" />
-    <Compile Include="Comment.cs" />
-    <Compile Include="CommentsContainer.cs" />
-    <Compile Include="Compatibility.cs" />
-    <Compile Include="IssuePriority.cs" />
-    <Compile Include="Utils\TimeUtils.cs" />
-    <Compile Include="Worklog.cs" />
-    <Compile Include="WorklogUpdated.cs" />
-    <Compile Include="IssueType.cs" />
-    <Compile Include="JiraProject.cs" />
-    <Compile Include="Prioirty.cs" />
-    <Compile Include="ProjectVersion.cs" />
-    <Compile Include="Resolution.cs" />
-    <Compile Include="NamedProperty.cs" />
-    <Compile Include="ServerInfo.cs" />
-    <Compile Include="WatchersContainer.cs" />
-    <Compile Include="IJiraClient.cs" />
-    <Compile Include="Issue.cs" />
-    <Compile Include="IssueContainer.cs" />
-    <Compile Include="IssueFields.cs" />
-    <Compile Include="IssueLink.cs" />
-    <Compile Include="IssueRef.cs" />
-    <Compile Include="JiraClient.cs" />
-    <Compile Include="JiraClientException.cs" />
-    <Compile Include="JiraUser.cs" />
+    <Compile Include="Dto\Attachment.cs" />
+    <Compile Include="Dto\AvatarUrls.cs" />
+    <Compile Include="Attributes\FieldInformation.cs" />
+    <Compile Include="Dto\LinkType.cs" />
+    <Compile Include="Dto\WorklogUpdatedValue.cs" />
+    <Compile Include="Helper\List.cs" />
+    <Compile Include="Dto\Project.cs" />
+    <Compile Include="Dto\Comment.cs" />
+    <Compile Include="Dto\CommentsContainer.cs" />
+    <Compile Include="Client\Compatibility.cs" />
+    <Compile Include="Dto\IssuePriority.cs" />
+    <Compile Include="Helper\TimeUtils.cs" />
+    <Compile Include="Dto\WorklogUpdated.cs" />
+    <Compile Include="Dto\IssueType.cs" />
+    <Compile Include="Dto\JiraProject.cs" />
+    <Compile Include="Dto\Prioirty.cs" />
+    <Compile Include="Dto\ProjectVersion.cs" />
+    <Compile Include="Dto\Resolution.cs" />
+    <Compile Include="Attributes\Property.cs" />
+    <Compile Include="Dto\ServerInfo.cs" />
+    <Compile Include="Dto\WatchersContainer.cs" />
+    <Compile Include="Client\IJiraClient.cs" />
+    <Compile Include="Dto\Issue.cs" />
+    <Compile Include="Dto\IssueContainer.cs" />
+    <Compile Include="Dto\IssueFields.cs" />
+    <Compile Include="Dto\IssueLink.cs" />
+    <Compile Include="Dto\IssueRef.cs" />
+    <Compile Include="Client\JiraClient.cs" />
+    <Compile Include="Dto\JiraClientException.cs" />
+    <Compile Include="Dto\JiraUser.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="RemoteLink.cs" />
-    <Compile Include="RemoteLinkResult.cs" />
-    <Compile Include="Status.cs" />
-    <Compile Include="Transition.cs" />
-    <Compile Include="Timetracking.cs" />
-    <Compile Include="TransitionsContainer.cs" />
-    <Compile Include="Worklog.cs" />
-    <Compile Include="WorklogsContainer.cs" />
+    <Compile Include="Dto\RemoteLink.cs" />
+    <Compile Include="Dto\RemoteLinkResult.cs" />
+    <Compile Include="Dto\Status.cs" />
+    <Compile Include="Dto\Transition.cs" />
+    <Compile Include="Dto\Timetracking.cs" />
+    <Compile Include="Dto\TransitionsContainer.cs" />
+    <Compile Include="Dto\Worklog.cs" />
+    <Compile Include="Dto\WorklogsContainer.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
