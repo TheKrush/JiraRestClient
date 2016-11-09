@@ -269,7 +269,7 @@ namespace TechTalk.JiraRestClient.Client
                             }
 
                             if (addEntry)
-                                issueData.Add(property.FieldName, new[] { new { set = value } });
+                                issueData.Add(property.FieldName, value);
                         }
                     }
                 }
